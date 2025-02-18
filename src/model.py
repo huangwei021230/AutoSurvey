@@ -1,3 +1,4 @@
+import logging
 import time
 import requests
 import json
@@ -11,6 +12,7 @@ class APIModel:
         self.__api_url = api_url
         self.model = model
         
+    # request to model and call APIs
     def __req(self, text, temperature, max_try = 5):
         url = f"{self.__api_url}"
         pay_load_dict = {"model": f"{self.model}","messages": [{
@@ -26,16 +28,34 @@ class APIModel:
         }
         try:
             response = requests.request("POST", url, headers=headers, data=payload)
-            return json.loads(response.text)['choices'][0]['message']['content']
-        except:
-            for _ in range(max_try):
-                try:
-                    response = requests.request("POST", url, headers=headers, data=payload)
-                    return json.loads(response.text)['choices'][0]['message']['content']
-                except:
-                    pass
-                time.sleep(0.2)
-            return None
+            response.raise_for_status()
+            response_data = json.loads(response.text)
+            # Type Check After successful request
+            if 'choices' in response_data and len(response_data['choices']) > 0:  
+                content = response_data['choices'][0]['message']['content']
+                if isinstance(content, str):
+                    return content
+                else:
+                    error_msg = f"LLM API returned unexpected content type: {type(content)}. Content: {content}"
+                    print(error_msg)
+                    logging.error(error_msg)
+                    raise TypeError(error_msg)
+            else:
+                error_msg = f"LLM API response missing 'choices' or empty 'choices' list: {response_data}"
+                print(error_msg)
+                logging.error(error_msg)
+                raise ValueError(error_msg)
+        
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Request error during API request: {e}, Retry attempt: {max_try + 1}")
+        except json.JSONDecodeError as e:
+            logging.error(f"JSON decode error: {e}, Retry attempt: {max_try + 1}")
+
+        time.sleep(0.2) # Short delay before trying next time
+
+        # If all retries fail
+        logging.error("All API request retries failed.")
+        return None    
     
     def chat(self, text, temperature=1):
         response = self.__req(text, temperature=temperature, max_try=5)
@@ -48,7 +68,8 @@ class APIModel:
         return response
         
     def batch_chat(self, text_batch, temperature=0):
-        max_threads=15 # limit max concurrent threads using model API
+        # max_threads=15 # limit max concurrent threads using model API
+        max_threads = 5
         res_l = ['No response'] * len(text_batch)
         thread_l = []
         for i, text in zip(range(len(text_batch)), text_batch):

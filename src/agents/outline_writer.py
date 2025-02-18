@@ -16,8 +16,10 @@ class outlineWriter():
         
         self.model, self.api_key, self.api_url = model, api_key, api_url 
         self.api_model = APIModel(self.model, self.api_key, self.api_url)
-
+        
+        # db is the paper database
         self.db = database
+
         self.token_counter = tokenCounter()
         self.input_token_usage, self.output_token_usage = 0, 0
 

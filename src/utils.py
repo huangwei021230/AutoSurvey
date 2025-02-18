@@ -21,6 +21,9 @@ class tokenCounter():
     def num_tokens_from_list_string(self, list_of_string:List[str]) -> int:
         num = 0
         for s in list_of_string:
+            # hack for tiktoken
+            if s == None:
+                continue
             num += len(self.encoding.encode(s))
         return num
     

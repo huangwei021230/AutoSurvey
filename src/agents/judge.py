@@ -185,8 +185,14 @@ class Judge():
                 if len(source_ids) >0:
                     claims.append(re.sub(pattern=r'\[(.*?)\]', repl='',string=s))
                     sources_ids.append(list(source_ids))
-
-
+        
+        # For debug only
+        # Claims have been checked, it will replaced the paper name with the number
+        # The sentence will be concatenated into a "claim"
+        # with open('/root/autodl-tmp/Code/autosurvey/AutoSurvey/output/claim-list.txt', 'a+') as f:
+        #     for c in claims:
+        #         f.write(c + '\n')
+        
         paper_infos = self.db.get_paper_info_from_ids(list(references.values()))
 
         ids_to_title = {p['id']:p['title'] for p in paper_infos}
@@ -197,16 +203,25 @@ class Judge():
 
         thread_l = []
         scores = [0] * len(claims)
+        
+        # design a queue to limit the number of threads
         for i in range(len(claims)):
             sources = [index_to_paper[index] for index in sources_ids[i]]
             thread = threading.Thread(target=self.__nli, args=(sources, claims[i], scores, i))
             thread_l.append(thread)
             thread.start()
+            # limit the number of threads concurrent
+            time.sleep(0.1)
+        
         for thread in tqdm(thread_l):
             thread.join()
+        
         citation_num = 0
         thread_l = []
         precisions = [0] * len(claims)
+
+        # with open('/root/autodl-tmp/Code/autosurvey/AutoSurvey/output/sources-list.txt', 'a+') as f:
+
         for j, claim, source_ids in zip(range(len(claims)), claims, sources_ids):
             citation_num += len(source_ids)
             if scores[j] == 1:
@@ -216,6 +231,12 @@ class Judge():
                     thread = threading.Thread(target=self.__relevant, args=(sources, com_sources, claim, precisions, j))
                     thread_l.append(thread)
                     thread.start()
+                    # limit the number of threads concurrent
+                    time.sleep(0.1)
+        
+                        # f.write(str(sources) + '\n')
+        # f.close()
+
         for thread in tqdm(thread_l):
             thread.join()
 

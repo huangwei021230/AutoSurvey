@@ -31,9 +31,10 @@ def read_survey(path, topic):
     return dic['survey'], dic['reference']
 
 def evaluate(args):
-
+    # initialize database
     db = database(db_path = args.db_path, embedding_model = args.embedding_model)
 
+    # initialize judge
     if not os.path.exists(args.saving_path):
         os.mkdir(args.saving_path)
 
