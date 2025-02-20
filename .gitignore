@@ -1,4 +1,5 @@
-database
-output
+database/
+output/
 database.zip
+pdf/
 src/__pycache__
