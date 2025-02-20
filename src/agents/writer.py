@@ -36,11 +36,13 @@ class subsectionWriter():
         for i in range(len(parsed_outline['sections'])):
             descriptions = parsed_outline['subsection_descriptions'][i]
             for d in descriptions:
+                # db will return references_ids, which is a list of ids
                 references_ids = self.db.get_ids_from_query(d, num = rag_num, shuffle = False)
                 total_ids += references_ids
                 section_references_ids[i].append(references_ids)
         total_references_infos = self.db.get_paper_info_from_ids(list(set(total_ids)))
         temp_title_dic = {p['id']:p['title'] for p in total_references_infos}
+        # this implementation only use abstract in database
         temp_abs_dic = {p['id']:p['abs'] for p in total_references_infos}
 
         for i in range(len(parsed_outline['sections'])):
